@@ -38,16 +38,58 @@ const login = async (req, res) =>{
       return res.status(401).json({ message: "Invalid password" });
     } // Generate JWT token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET); 
-    res.json({ token }); 
+    res.json({ token, userId: user._id}); 
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
   }
 
 };
+const userDetails = async (req, res) => {
+  const { userId } = req.params; // Get userId from query parameters
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required' });
+  }
+
+  try {
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+const updateUserDetails = async (req, res) => {
+  try {
+    const { userId, emailFrom, emailPass } = req.body;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.emailFrom = emailFrom || user.emailFrom;
+    user.emailPass = emailPass || user.emailPass;
+    await user.save();
+
+    res.json({ message: 'User profile updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+
+
 module.exports = {
     signup,
     login,
+    userDetails,
+    updateUserDetails,
     
 
   };

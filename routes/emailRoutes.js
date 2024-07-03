@@ -15,6 +15,8 @@ router.post('/signup', userController.signup);
 
 // Handle login form submission
 router.post('/login', userController.login);
+router.get('/profile/:userId', userController.userDetails);
+router.put('/profile', userController.updateUserDetails);
 
 router.get('/track/:emailId',emailController.trackEmailOpened);
 module.exports = router;
