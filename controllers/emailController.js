@@ -123,7 +123,7 @@ exports.getEmailStatus = async (req, res) => {
 
 // Create a new template
 exports.createTemplate = async (req, res) => {
-  const { name, to, subject, body } = req.body;
+  const { name, to, subject, body ,userId} = req.body;
 
   try {
     const template = new Template({
@@ -131,6 +131,7 @@ exports.createTemplate = async (req, res) => {
       to,
       subject,
       body,
+      userId,
     });
 
     await template.save();
@@ -143,7 +144,10 @@ exports.createTemplate = async (req, res) => {
 // Get all templates
 exports.getTemplates = async (req, res) => {
   try {
-    const templates = await Template.find();
+    const {userId} = req.params;
+    console.log(userId);
+    const templates = await Template.find({ userId});
+    console.log(templates);
     res.status(200).json(templates);
   } catch (error) {
     res.status(500).json({ error: 'Error fetching templates' });
