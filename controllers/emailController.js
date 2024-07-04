@@ -30,7 +30,7 @@ agenda.define('send email', async (job) => {
     return;
   }
 
-  const trackingPixelUrl = `http://localhost:5000/api/track/${emailId}`;
+  const trackingPixelUrl = `https://cold-mailer-back.onrender.com/api/track/${emailId}`;
 
   const transporter = nodemailer.createTransport({
     service: 'gmail',
