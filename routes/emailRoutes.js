@@ -8,7 +8,7 @@ router.get('/emails', emailController.getEmailStatus);
 
 // New template routes
 router.post('/templates', emailController.createTemplate);
-router.get('/templates', emailController.getTemplates);
+router.get('/templates/:userId', emailController.getTemplates);
 
 // Handle signup form submission
 router.post('/signup', userController.signup);
