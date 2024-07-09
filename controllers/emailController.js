@@ -1,13 +1,24 @@
 const Email = require('../models/emailSchema');
 const User = require('../models/User');
-
 const Template = require('../models/templateSchema');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const Agenda = require('agenda');
+const multer = require('multer');
 require('dotenv').config();
-
+//https://cold-mailer-back.onrender.com
 const agenda = new Agenda({ db: { address: process.env.MONGO_URI } });
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+
+const upload = multer({ storage });
 
 agenda.define('send email', async (job) => {
   const { emailId, userId } = job.attrs.data;
@@ -25,7 +36,7 @@ agenda.define('send email', async (job) => {
   }
 
   const { emailFrom, emailPass } = user;
-  if ( !emailFrom || !emailPass) {
+  if (!emailFrom || !emailPass) {
     console.error('User email credentials not found');
     return;
   }
@@ -46,6 +57,7 @@ agenda.define('send email', async (job) => {
     subject: email.subject,
     text: email.body,
     html: `${email.body}<img src="${trackingPixelUrl}" alt="" style="display:none;" />`,
+    attachments: email.attachment ? [{ filename: email.attachment.filename, path: email.attachment.path }] : [],
   };
 
   console.log('Sending email with HTML content:', mailOptions.html);
@@ -71,6 +83,7 @@ exports.scheduleEmail = async (req, res) => {
   let emailTo = to;
   let emailSubject = subject;
   let emailBody = body;
+  let emailAttachment = null;
 
   try {
     if (!userId) {
@@ -83,6 +96,7 @@ exports.scheduleEmail = async (req, res) => {
         emailTo = template.to;
         emailSubject = template.subject;
         emailBody = template.body;
+        emailAttachment = template.attachment;
       } else {
         return res.status(404).json({ error: 'Template not found' });
       }
@@ -95,6 +109,7 @@ exports.scheduleEmail = async (req, res) => {
       delay: delayInMinutes,
       scheduledAt,
       userId, // Store userId in the email document
+      attachment: emailAttachment,
     });
 
     await email.save();
@@ -109,21 +124,19 @@ exports.scheduleEmail = async (req, res) => {
   }
 };
 
-
-
 exports.getEmailStatus = async (req, res) => {
   try {
     const emails = await Email.find();
     res.status(200).json(emails);
   } catch (error) {
-    res.status(500).json({ error: 'Error fetching email statuses'
-    });
+    res.status(500).json({ error: 'Error fetching email statuses' });
   }
 };
 
 // Create a new template
 exports.createTemplate = async (req, res) => {
-  const { name, to, subject, body ,userId} = req.body;
+  const { name, to, subject, body, userId } = req.body;
+  const file = req.file;
 
   try {
     const template = new Template({
@@ -132,6 +145,7 @@ exports.createTemplate = async (req, res) => {
       subject,
       body,
       userId,
+      attachment: file ? { filename: file.originalname, path: file.path } : null,
     });
 
     await template.save();
@@ -144,10 +158,8 @@ exports.createTemplate = async (req, res) => {
 // Get all templates
 exports.getTemplates = async (req, res) => {
   try {
-    const {userId} = req.params;
-    console.log(userId);
-    const templates = await Template.find({ userId});
-    console.log(templates);
+    const { userId } = req.params;
+    const templates = await Template.find({ userId });
     res.status(200).json(templates);
   } catch (error) {
     res.status(500).json({ error: 'Error fetching templates' });
@@ -156,11 +168,8 @@ exports.getTemplates = async (req, res) => {
 
 exports.trackEmailOpened = async (req, res) => {
   const { emailId } = req.params;
-  console.log(req.params);
   try {
-    // Find the email by ID and update its status to "opened" if it hasn't been opened yet
     const email = await Email.findById(emailId);
-    console.log(email);
     if (email && !email.openedAt) {
       email.openedAt = new Date();
       email.status = 'opened';
@@ -170,7 +179,6 @@ exports.trackEmailOpened = async (req, res) => {
     console.error('Error tracking email:', error);
   }
 
-  // Serve the tracking pixel image
   const pixelPath = path.join(__dirname, '../public/pixel.png');
   res.sendFile(pixelPath);
 };
