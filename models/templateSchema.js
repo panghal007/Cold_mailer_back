@@ -5,9 +5,9 @@ const templateSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  to: { 
-    type: String, 
-    required: true 
+  to: {
+    type: String,
+    required: true,
   },
   subject: {
     type: String,
@@ -25,6 +25,10 @@ const templateSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
+  },
+  attachment: {
+    filename: String,
+    path: String,
   },
 });
 
