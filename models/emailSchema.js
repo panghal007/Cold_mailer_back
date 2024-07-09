@@ -1,11 +1,26 @@
 const mongoose = require('mongoose');
 
 const emailSchema = new mongoose.Schema({
-  to: String,
-  subject: String,
-  body: String,
-  delay: Number,
-  scheduledAt: Date,
+  to: {
+    type: String,
+    required: true,
+  },
+  subject: {
+    type: String,
+    required: true,
+  },
+  body: {
+    type: String,
+    required: true,
+  },
+  delay: {
+    type: Number,
+    required: true,
+  },
+  scheduledAt: {
+    type: Date,
+    required: true,
+  },
   status: {
     type: String,
     enum: ['scheduled', 'sent', 'failed', 'opened'],
@@ -18,9 +33,18 @@ const emailSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+  attachment: {
+    filename: {
+      type: String,
+      required: false,
+    },
+    path: {
+      type: String,
+      required: false,
+    },
+  },
 });
 
 const Email = mongoose.model('Email', emailSchema);
 
 module.exports = Email;
-
